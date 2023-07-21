@@ -1,1 +1,1 @@
-Starfield in C++ featuring Glad for OpenGL and GLFW for windowing
+Starfield in C++ featuring Glad for OpenGL and GLFW for windowing.

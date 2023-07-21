@@ -1,0 +1,1 @@
+This is where you should put the glfw3.lib file to be used by the program.
