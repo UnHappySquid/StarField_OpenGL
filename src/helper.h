@@ -27,7 +27,7 @@ in vec4 c_in;
 out vec4 color;
 
 void main(){
-    color = vec4(1, 1, 1, 1);
+    color = c_in;
 }
 )glsl";
 
@@ -36,20 +36,22 @@ const double PI = 3.14159265359;
 int WIDTH, HEIGHT;
 const double sens_x = 0.01;
 const double sens_y = 0.01;
-const double FPS = 144, frame_duration = 1 / FPS;
+const double FPS = 60, frame_duration = 1 / FPS;
 const float FOV = 90;
-const float Zfar = 1000000;
+const float Zfar = 1;
 const float Znear = 0.01;
 float aspect;
 const float f = 1. / tanf((FOV * PI / 180) / 2);
 const float q = Zfar / (Zfar - Znear);
 
 // Random generators
-const int seed = 123;
-std::mt19937   eng(seed);
-std::uniform_real_distribution<float> dis_xy(-1.f, 1.f);
-std::uniform_real_distribution<float> dis_z(0.f, 1.f);
+const int seed = 11234212512332233;
+std::default_random_engine eng(seed);
+std::uniform_real_distribution<float> dis_xy(-2.5f, 2.5f);
+std::uniform_real_distribution<float> dis_xy_far(1.f, 2.5f);
+std::uniform_real_distribution<float> dis_z(0.f, 5.f);
 std::uniform_real_distribution<float> dis_z_far(1.f, 5.f);
+std::uniform_real_distribution<float> dis_color(0.f, 1.f);
 
 // Used as 3d position with w for good mesure
 struct Position {
@@ -60,6 +62,14 @@ std::ostream& operator<<(std::ostream& os, Position& p) {
     os << "{ " << p.x << ", " << p.y << ", " << p.z << ", " << p.w << " }";
     return os;
 }
+bool operator==(Position& p1, Position& p2) {
+    return p1.x == p2.x && p1.y == p2.y && p1.z == p2.z;
+}
+
+bool operator!=(Position& p1, Position& p2) {
+    return !(p1 == p2);
+}
+
 
 Position project_position(Position p) {
     Position ret;
@@ -174,12 +184,20 @@ float generate_xy() {
     return dis_xy(eng);
 }
 
+// Generates float between 1 and 2.5
+float generate_xy_far() {
+    return dis_xy_far(eng);
+}
 // Generates float between 0 and 1
-float generate_z_normalized() {
+float generate_z() {
     return dis_z(eng);
 }
 
-// Generates float between 1 and 10
+float generate_color() {
+    return dis_color(eng);
+}
+
+// Generates float between 1 and 5
 float generate_z_far() {
     return dis_z_far(eng);
 }
@@ -194,6 +212,7 @@ class Circle {
 
     float radius;
     Position center;
+    float red, green, blue;
 
     Vertex vertices[N];
     Position pos[N];
@@ -219,12 +238,17 @@ class Circle {
         for (size_t i = 0; i < N; i++)
         {
             vertices[i].p = project_position(pos[i]);
+            vertices[i].r = red;
+            vertices[i].g = green;
+            vertices[i].b = blue;
+            vertices[i].a = 1.f;
         }
     }
 
 public:
 
-    Circle(Position center, float r) : center{ center }, radius{ r } {
+    Circle(Position center, float r, float red, float green, float blue) : center{ center }, radius{ r }
+        , red{ red }, green{ green }, blue{blue} {
         glGenVertexArrays(1, &va);
         glGenBuffers(1, &vb);
         glGenBuffers(1, &eb);
@@ -253,7 +277,7 @@ public:
         glEnableVertexAttribArray(0);
 
         glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, r));
-        //glEnableVertexAttribArray(1);
+        glEnableVertexAttribArray(1);
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
@@ -286,5 +310,9 @@ public:
 
     Position get_center() {
         return center;
+    }
+
+    unsigned int get_va() {
+        return va;
     }
 };
