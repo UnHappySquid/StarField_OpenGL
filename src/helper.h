@@ -33,14 +33,14 @@ void main(){
 
 // Constants
 const double PI = 3.14159265359;
-const int WIDTH = 2560, HEIGHT = 1440;
+int WIDTH, HEIGHT;
 const double sens_x = 0.01;
 const double sens_y = 0.01;
 const double FPS = 144, frame_duration = 1 / FPS;
 const float FOV = 90;
 const float Zfar = 1000000;
 const float Znear = 0.01;
-const float aspect = float(HEIGHT) / float(WIDTH);
+float aspect;
 const float f = 1. / tanf((FOV * PI / 180) / 2);
 const float q = Zfar / (Zfar - Znear);
 
@@ -113,6 +113,13 @@ GLFWwindow* window_init() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
+    GLFWmonitor* mon = glfwGetPrimaryMonitor();
+    
+    const GLFWvidmode* return_struct = glfwGetVideoMode(mon);
+
+    WIDTH = return_struct->width;
+    HEIGHT = return_struct->height;
+    aspect = HEIGHT / float(WIDTH);
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(WIDTH, HEIGHT, "Hello World", glfwGetPrimaryMonitor(), NULL);
     if (!window)
