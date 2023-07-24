@@ -7,7 +7,6 @@ const float star_size = 0.001;
 Position speed = { 0, 0, 0, 1 };
 const float max_speed_z = 5;
 const float max_speed_xy = 5;
-const float min_speed = -5;
 
 
 // Generates the stars and holds main way to make movement
@@ -165,7 +164,7 @@ public:
 
 void process_input(GLFWwindow* window, Starfield& field) {
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS &&
-        field.get_velocity().z >= min_speed) {
+        field.get_velocity().z >= -max_speed_z) {
         field.get_velocity_ref().z -= 0.01;
     }
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS 
@@ -181,7 +180,7 @@ void process_input(GLFWwindow* window, Starfield& field) {
 
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS
-        && field.get_velocity().x >= min_speed) {
+        && field.get_velocity().x >= -max_speed_xy) {
         field.get_velocity_ref().x -= 0.01;
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS
@@ -190,7 +189,7 @@ void process_input(GLFWwindow* window, Starfield& field) {
 
     }
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS
-        && field.get_velocity().y >= min_speed) {
+        && field.get_velocity().y >= -max_speed_xy) {
         field.get_velocity_ref().y -= 0.01;
     }
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
@@ -205,11 +204,11 @@ void process_input(GLFWwindow* window, Starfield& field) {
     }
 
     // Not sure if i wanna keep this resize part
-    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
 
         field.resize_all(0.0005);
     }
-    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
 
         field.resize_all(-0.0005);
     }
@@ -255,7 +254,7 @@ int main() {
     {
         if (t2 - t1 >= frame_duration) {
             // Resize the 
-            FOV = field.get_speed() / sqrt(2 * (max_speed_xy * max_speed_xy) + max_speed_z * max_speed_z) * 180 + 90;
+            FOV = field.get_speed() / sqrt(2 * (max_speed_xy * max_speed_xy) + max_speed_z * max_speed_z) * 360 + 45;
             f = 1. / tanf((FOV * PI / 180) / 2);
             glUniform1f(frustumScaleUnif, f);
 

@@ -326,6 +326,7 @@ public:
     }
 
     void resize(float dr) {
+        if (radius + dr > 0)
         radius += dr;
     }
 
