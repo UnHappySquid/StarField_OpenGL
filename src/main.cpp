@@ -2,26 +2,28 @@
 
 using namespace std;
 
-const int num_stars = 1000;
-const float star_size = 0.001;
-Position speed = { 0, 0, 0, 1 };
+const int num_stars = 2500;
+const float init_star_size = 0.001;
+Position init_speed = { 0, 0, 0, 1 };
 const float max_speed_z = 5;
 const float max_speed_xy = 5;
-
+const float min_speed = 0.01;
+const float slow_down_rate = 0.90;
+const int num_points_per_circle = 10;
 
 // Generates the stars and holds main way to make movement
 class Starfield {
 
     // Circle holds the OpenGL implementation details to get a cirle on the screen
     // Star holds that and the implementation to get a line behind the star
-    class Star : protected Circle<32> {
-        // Used for line
-        Position old_center;
+    class Star : protected Circle<num_points_per_circle> {
 
     public:
-        Star(Position center) : Circle{ center, star_size, 1, 1, 1 }, old_center{ center } {
+        // No color specified (white)
+        Star(Position center) : Circle{ center, init_star_size, 1, 1, 1 } {
         }
-        Star(Position center, float r, float g, float b) : Circle{ center, star_size, r, g, b }, old_center{ center } {
+        // Complete constructor
+        Star(Position center, float r, float g, float b) : Circle{ center, init_star_size, r, g, b } {
         }
 
         void bound_check_logic() {
@@ -39,7 +41,6 @@ class Starfield {
                 new_center.z = p.z < -5.f ? generate_z_far() : -generate_z_far();
             }
             if (p != new_center) {
-                old_center = get_center();
                 move_all_to(new_center);
             }
         }
@@ -47,14 +48,12 @@ class Starfield {
         void tick(float dt, Position velocity) {
             bound_check_logic();
             move_all_by(velocity.x * dt, velocity.y * dt, velocity.z * dt);
-            old_center = get_center();
             Circle::draw();
         }
 
         void rotate_z(float deg) {
             Position new_c;
             Position curr_c = get_center();
-            old_center = curr_c;
             new_c.x = curr_c.x * cos(to_rad(deg))
                 - curr_c.y * sin(to_rad(deg));
             new_c.y = curr_c.x * sin(to_rad(deg)) + curr_c.y * cos(to_rad(deg));
@@ -66,7 +65,6 @@ class Starfield {
         void rotate_x(float deg) {
             Position new_c;
             Position curr_c = get_center();
-            old_center = curr_c;
             new_c.y = curr_c.y * cos(to_rad(deg))
                 - curr_c.z * sin(to_rad(deg));
             new_c.z = curr_c.y * sin(to_rad(deg)) + curr_c.z * cos(to_rad(deg));
@@ -78,7 +76,6 @@ class Starfield {
         void rotate_y(float deg) {
             Position new_c;
             Position curr_c = get_center();
-            old_center = curr_c;
             new_c.x = curr_c.x * cos(to_rad(deg))
                 + curr_c.z * sin(to_rad(deg));
             new_c.z = -curr_c.x * sin(to_rad(deg)) + curr_c.z * cos(to_rad(deg));
@@ -94,7 +91,7 @@ class Starfield {
 
     vector<Star*> stars;
     Position field_velocity;
-
+    bool slowing_down = false;
 public:
     Starfield(int num_stars, Position vel) : field_velocity{ vel } {
 
@@ -106,7 +103,7 @@ public:
             generate_z(),
             1 };
 
-            // Make new star
+            // Make new star with pastel colors
             Star* star = new Star(ran_pos, 0.8 + generate_color() / 5
                 , 0.8 + generate_color() / 5, 0.8 + generate_color() / 5);
             // Push back into star vector 
@@ -115,6 +112,17 @@ public:
     }
 
     void tick(float dt) {
+        if (slowing_down && get_speed() >= min_speed) {
+            field_velocity.x *= slow_down_rate;
+            field_velocity.y *= slow_down_rate;
+            field_velocity.z *= slow_down_rate;
+        }
+        else if (slowing_down && get_speed() < min_speed) {
+            field_velocity.x = 0;
+            field_velocity.y = 0;
+            field_velocity.z = 0;
+            slowing_down = false;
+        }
         for (Star* s : stars) {
             s->tick(dt, field_velocity);
         }
@@ -160,37 +168,49 @@ public:
         return sqrt(field_velocity.x * field_velocity.x + field_velocity.y * field_velocity.y + field_velocity.z * field_velocity.z);
     }
 
+    void set_slowing_down(bool b) {
+        slowing_down = b;
+    }
+
+    bool get_slowing_down() {
+        return slowing_down;
+    }
+
 };
 
 void process_input(GLFWwindow* window, Starfield& field) {
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS &&
-        field.get_velocity().z >= -max_speed_z) {
-        field.get_velocity_ref().z -= 0.01;
+    // if we are slowing down then dont process inputs for speed
+    if (!field.get_slowing_down()) {
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS &&
+            field.get_velocity().z >= -max_speed_z) {
+            field.get_velocity_ref().z -= 0.01;
+        }
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS
+            && field.get_velocity().z <= max_speed_z) {
+            field.get_velocity_ref().z += 0.01;
+        }
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS
+            && field.get_velocity().x <= max_speed_xy) {
+            field.get_velocity_ref().x += 0.01;
+
+        }
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS
+            && field.get_velocity().x >= -max_speed_xy) {
+            field.get_velocity_ref().x -= 0.01;
+        }
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS
+            && field.get_velocity().y <= max_speed_xy) {
+            field.get_velocity_ref().y += 0.01;
+
+        }
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS
+            && field.get_velocity().y >= -max_speed_xy) {
+            field.get_velocity_ref().y -= 0.01;
+        }
     }
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS 
-        && field.get_velocity().z <= max_speed_z) {
-        field.get_velocity_ref().z += 0.01;
-    }
+    
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS) {
-        field.get_velocity_ref() = {0, 0, 0, 1};
-    }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS
-        && field.get_velocity().x <= max_speed_xy) {
-        field.get_velocity_ref().x += 0.01;
-
-    }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS
-        && field.get_velocity().x >= -max_speed_xy) {
-        field.get_velocity_ref().x -= 0.01;
-    }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS
-        && field.get_velocity().y <= max_speed_xy) {
-        field.get_velocity_ref().y += 0.01;
-
-    }
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS
-        && field.get_velocity().y >= -max_speed_xy) {
-        field.get_velocity_ref().y -= 0.01;
+        field.set_slowing_down(true);
     }
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
         field.rotate_around_z(0.5);
@@ -246,7 +266,7 @@ int main() {
     //  Background color
 	glClearColor(0.1, 0.1, 0.1, 1);
 	// StarField
-    Starfield field{num_stars, speed};
+    Starfield field{num_stars, init_speed};
     // -------------------------------------------------------
     
     // Game Loop ---------------------------------------------

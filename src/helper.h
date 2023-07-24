@@ -60,7 +60,6 @@ const float Znear = 0.001;
 int WIDTH, HEIGHT;
 float aspect;
 
-
 // variables
 float FOV = 90;
 float f = 1. / tanf((FOV * PI / 180) / 2);
