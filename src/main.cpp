@@ -2,93 +2,100 @@
 
 using namespace std;
 
-const int num_stars = 2000;
+const int num_stars = 1000;
 const float star_size = 0.001;
 Position speed = { 0, 0, 0, 1 };
-const float max_speed_z = 0.1;
-const float max_speed = 5;
+const float max_speed_z = 5;
+const float max_speed_xy = 5;
 const float min_speed = -5;
 
-// Circle holds the OpenGL implementation details to get a cirle on the screen
-// Star holds that and the implementation to get a line behind the star
-class Star : protected Circle<32>{
-    // Used for line
-    Position old_center;
-
-public:
-    Star(Position center) : Circle{center, star_size, 1, 1, 1}, old_center{ center } {
-    }
-    Star(Position center, float r, float g, float b) : Circle{ center, star_size, r, g, b }, old_center{ center } {
-    }
-
-    void bound_check_logic() {
-        Position p = get_center();
-        Position new_center = p;
-
-        if (p.x <= -2.5f || p.x >= 2.5f) {
-            new_center.x = p.x <= -2.5f ? generate_xy_far() : -generate_xy_far();
-        }
-        if (p.y <= -2.5f || p.y >= 2.5f) {
-            new_center.y = p.y <= -2.5f ? generate_xy_far() : -generate_xy_far();
-
-        }
-        if (p.z < 0.f || p.z > 5.f) {
-            new_center.z = p.z < 0.f ? generate_z_far() : 0.f;
-        }
-        if (p != new_center) {
-            old_center = get_center();
-            move_all_to(new_center);
-        }
-    }
-
-    void tick(float dt, Position velocity) {
-        bound_check_logic();
-        move_all_by(velocity.x * dt, velocity.y * dt, velocity.z * dt);
-        old_center = get_center();
-        Circle::draw();
-    }
-
-    void rotate_z(float deg) {
-        Position new_c;
-        Position curr_c = get_center();
-        old_center = curr_c;
-        new_c.x = curr_c.x * cos(to_rad(deg)) 
-            - curr_c.y * sin(to_rad(deg));
-        new_c.y = curr_c.x * sin(to_rad(deg)) + curr_c.y * cos(to_rad(deg));
-        new_c.z = curr_c.z;
-        new_c.w = curr_c.w;
-        move_all_to(new_c);
-    }
-
-    void rotate_x(float deg) {
-        Position new_c;
-        Position curr_c = get_center();
-        old_center = curr_c;
-        new_c.y = curr_c.y * cos(to_rad(deg))
-            - curr_c.z * sin(to_rad(deg));
-        new_c.z = curr_c.y * sin(to_rad(deg)) + curr_c.z * cos(to_rad(deg));
-        new_c.x = curr_c.x;
-        new_c.w = curr_c.w;
-        move_all_to(new_c);
-    }
-
-    void rotate_y(float deg) {
-        Position new_c;
-        Position curr_c = get_center();
-        old_center = curr_c;
-        new_c.x = curr_c.x * cos(to_rad(deg))
-            + curr_c.z * sin(to_rad(deg));
-        new_c.z = - curr_c.x * sin(to_rad(deg)) + curr_c.z * cos(to_rad(deg));
-        new_c.y = curr_c.y;
-        new_c.w = curr_c.w;
-        move_all_to(new_c);
-    }
-};
 
 // Generates the stars and holds main way to make movement
 class Starfield {
+
+    // Circle holds the OpenGL implementation details to get a cirle on the screen
+    // Star holds that and the implementation to get a line behind the star
+    class Star : protected Circle<32> {
+        // Used for line
+        Position old_center;
+
+    public:
+        Star(Position center) : Circle{ center, star_size, 1, 1, 1 }, old_center{ center } {
+        }
+        Star(Position center, float r, float g, float b) : Circle{ center, star_size, r, g, b }, old_center{ center } {
+        }
+
+        void bound_check_logic() {
+            Position p = get_center();
+            Position new_center = p;
+
+            if (p.x <= -2.5f || p.x >= 2.5f) {
+                new_center.x = p.x <= -2.5f ? generate_xy_far() : -generate_xy_far();
+            }
+            if (p.y <= -2.5f || p.y >= 2.5f) {
+                new_center.y = p.y <= -2.5f ? generate_xy_far() : -generate_xy_far();
+
+            }
+            if (p.z < -5.f || p.z > 5.f) {
+                new_center.z = p.z < -5.f ? generate_z_far() : -generate_z_far();
+            }
+            if (p != new_center) {
+                old_center = get_center();
+                move_all_to(new_center);
+            }
+        }
+
+        void tick(float dt, Position velocity) {
+            bound_check_logic();
+            move_all_by(velocity.x * dt, velocity.y * dt, velocity.z * dt);
+            old_center = get_center();
+            Circle::draw();
+        }
+
+        void rotate_z(float deg) {
+            Position new_c;
+            Position curr_c = get_center();
+            old_center = curr_c;
+            new_c.x = curr_c.x * cos(to_rad(deg))
+                - curr_c.y * sin(to_rad(deg));
+            new_c.y = curr_c.x * sin(to_rad(deg)) + curr_c.y * cos(to_rad(deg));
+            new_c.z = curr_c.z;
+            new_c.w = curr_c.w;
+            move_all_to(new_c);
+        }
+
+        void rotate_x(float deg) {
+            Position new_c;
+            Position curr_c = get_center();
+            old_center = curr_c;
+            new_c.y = curr_c.y * cos(to_rad(deg))
+                - curr_c.z * sin(to_rad(deg));
+            new_c.z = curr_c.y * sin(to_rad(deg)) + curr_c.z * cos(to_rad(deg));
+            new_c.x = curr_c.x;
+            new_c.w = curr_c.w;
+            move_all_to(new_c);
+        }
+
+        void rotate_y(float deg) {
+            Position new_c;
+            Position curr_c = get_center();
+            old_center = curr_c;
+            new_c.x = curr_c.x * cos(to_rad(deg))
+                + curr_c.z * sin(to_rad(deg));
+            new_c.z = -curr_c.x * sin(to_rad(deg)) + curr_c.z * cos(to_rad(deg));
+            new_c.y = curr_c.y;
+            new_c.w = curr_c.w;
+            move_all_to(new_c);
+        }
+
+        void resize(float dr) {
+            Circle::resize(dr);
+        }
+    };
+
     vector<Star*> stars;
     Position field_velocity;
+
 public:
     Starfield(int num_stars, Position vel) : field_velocity{ vel } {
 
@@ -101,34 +108,42 @@ public:
             1 };
 
             // Make new star
-            Star* star = new Star(ran_pos, generate_color(), generate_color(), generate_color());
+            Star* star = new Star(ran_pos, 0.8 + generate_color() / 5
+                , 0.8 + generate_color() / 5, 0.8 + generate_color() / 5);
             // Push back into star vector 
             stars.push_back(star);
         }
     }
+
     void tick(float dt) {
         for (Star* s : stars) {
             s->tick(dt, field_velocity);
         }
     }
 
-
     void rotate_around_x(float deg) {
         for (Star* s : stars) {
             s->rotate_x(deg);
         }
     }
+
     void rotate_around_y(float deg) {
         for (Star* s : stars) {
             s->rotate_y(deg);
         }
     }
+
     void rotate_around_z(float deg) {
         for (Star* s : stars) {
             s->rotate_z(deg);
         }
     }
 
+    void resize_all(float dr) {
+        for (Star* s : stars) {
+            s->resize(dr);
+        }
+    }
 
     void set_velocity(Position vel) {
         field_velocity = vel;
@@ -141,6 +156,11 @@ public:
     Position& get_velocity_ref() {
         return field_velocity;
     }
+
+    float get_speed() {
+        return sqrt(field_velocity.x * field_velocity.x + field_velocity.y * field_velocity.y + field_velocity.z * field_velocity.z);
+    }
+
 };
 
 void process_input(GLFWwindow* window, Starfield& field) {
@@ -152,13 +172,11 @@ void process_input(GLFWwindow* window, Starfield& field) {
         && field.get_velocity().z <= max_speed_z) {
         field.get_velocity_ref().z += 0.01;
     }
-    
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS) {
         field.get_velocity_ref() = {0, 0, 0, 1};
     }
-
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS
-        && field.get_velocity().x <= max_speed) {
+        && field.get_velocity().x <= max_speed_xy) {
         field.get_velocity_ref().x += 0.01;
 
     }
@@ -166,9 +184,8 @@ void process_input(GLFWwindow* window, Starfield& field) {
         && field.get_velocity().x >= min_speed) {
         field.get_velocity_ref().x -= 0.01;
     }
-
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS
-        && field.get_velocity().y <= max_speed) {
+        && field.get_velocity().y <= max_speed_xy) {
         field.get_velocity_ref().y += 0.01;
 
     }
@@ -176,20 +193,26 @@ void process_input(GLFWwindow* window, Starfield& field) {
         && field.get_velocity().y >= min_speed) {
         field.get_velocity_ref().y -= 0.01;
     }
-
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
         field.rotate_around_z(0.5);
     }
-
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
 
         field.rotate_around_z(-0.5);
     }
-
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     }
 
+    // Not sure if i wanna keep this resize part
+    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+
+        field.resize_all(0.0005);
+    }
+    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
+
+        field.resize_all(-0.0005);
+    }
 
     // This is all back in the yucky pixel coordinate system
     double dx, dy;
@@ -204,9 +227,19 @@ void process_input(GLFWwindow* window, Starfield& field) {
 int main() {
 	GLFWwindow* window = window_init();
 	load_OpenGL();
-	create_and_use_shaders(vs, fs);
+	unsigned int prog = create_and_use_shaders(vs, fs);
 
 
+
+    unsigned int frustumScaleUnif = glGetUniformLocation(prog, "frustumScale");
+    unsigned int zNearUnif = glGetUniformLocation(prog, "zNear");
+    unsigned int zFarUnif = glGetUniformLocation(prog, "zFar");
+    unsigned int aspectUnif = glGetUniformLocation(prog, "aspect");
+
+    glUniform1f(frustumScaleUnif, f);
+    glUniform1f(zNearUnif, Znear);
+    glUniform1f(zFarUnif, Zfar);
+    glUniform1f(aspectUnif, aspect);
 
 	// Set up here --------------------------------------------
 	double t1 = 0;
@@ -221,7 +254,10 @@ int main() {
     while (!glfwWindowShouldClose(window))
     {
         if (t2 - t1 >= frame_duration) {
-            
+            // Resize the 
+            FOV = field.get_speed() / sqrt(2 * (max_speed_xy * max_speed_xy) + max_speed_z * max_speed_z) * 180 + 90;
+            f = 1. / tanf((FOV * PI / 180) / 2);
+            glUniform1f(frustumScaleUnif, f);
 
             glClear(GL_COLOR_BUFFER_BIT);
             field.tick(frame_duration);
